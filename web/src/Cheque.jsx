@@ -159,6 +159,11 @@ function Paper({ e }) {
         </div>
         <div className="sign">
           {e.action === "approve" && <Signature />}
+          {e.action !== "approve" && (
+            <div className={`stamp stamp-${e.action}`}>
+              <span className="stamp-word">{e.action === "decline" ? "Declined" : "Hold for review"}</span>
+            </div>
+          )}
           <span className="sign-line" />
           <span className="cheque-label">Countersigned</span>
         </div>
@@ -170,11 +175,6 @@ function Paper({ e }) {
           .padStart(4, "0")}
       </p>
 
-      {e.action !== "approve" && (
-        <div className={`stamp stamp-${e.action}`}>
-          <span className="stamp-word">{e.action === "decline" ? "Declined" : "Hold for review"}</span>
-        </div>
-      )}
       {e.reasons.length > 0 && (
         <ul className="notes" aria-label="Reasons">
           {e.reasons.map((r) => (

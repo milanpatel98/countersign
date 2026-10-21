@@ -308,8 +308,8 @@ button {
 
 .stamp {
   position: absolute;
-  right: clamp(18px, 5vw, 64px);
-  bottom: clamp(54px, 8vw, 84px);
+  right: 0;
+  bottom: 14px;
   padding: 6px 16px 4px;
   border: 4px double currentColor;
   border-radius: 6px;
@@ -848,9 +848,8 @@ button {
     max-width: none;
     transform: none;
   }
-  .stamp {
-    bottom: auto;
-    top: 46%;
+  .sign {
+    padding-top: 64px;
   }
   .row {
     grid-template-columns: minmax(0, 1fr) auto;
