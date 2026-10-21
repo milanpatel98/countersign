@@ -1,0 +1,16 @@
+{
+  "events": 277749,
+  "scored": 276650,
+  "duplicates_dropped": 1099,
+  "late_scored": 8286,
+  "seconds": 3.3,
+  "events_per_second": 84114,
+  "p50_us": 8.0,
+  "p99_us": 35.2,
+  "p999_us": 104.9,
+  "actions": {
+    "approve": 275341,
+    "review": 523,
+    "decline": 786
+  }
+}

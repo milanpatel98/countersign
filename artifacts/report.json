@@ -1,0 +1,97 @@
+{
+  "transactions": 276650,
+  "fraud": 925,
+  "late_events": 9113,
+  "duplicates": 1099,
+  "skewed_vectors": 4401,
+  "split": {
+    "train": 184070,
+    "validate": 36885,
+    "test": 55695,
+    "test_fraud": 176
+  },
+  "model": {
+    "pr_auc": 0.878308221680868,
+    "reviewed": 278,
+    "fraud_caught": 154,
+    "fraud_total": 176,
+    "recall": 0.875,
+    "precision": 0.5539568345323741,
+    "dollars_caught": 36868.39,
+    "dollars_total": 42677.14,
+    "false_alarms_per_10k": 22.264117066163926
+  },
+  "rules": {
+    "pr_auc": 0.4575204332156049,
+    "reviewed": 278,
+    "fraud_caught": 77,
+    "fraud_total": 176,
+    "recall": 0.4375,
+    "precision": 0.27697841726618705,
+    "dollars_caught": 9901.55,
+    "dollars_total": 42677.14,
+    "false_alarms_per_10k": 36.08941556692701
+  },
+  "skewed_training": {
+    "pr_auc": 0.879199294011409,
+    "reviewed": 278,
+    "fraud_caught": 154,
+    "fraud_total": 176,
+    "recall": 0.875,
+    "precision": 0.5539568345323741,
+    "dollars_caught": 36868.39,
+    "dollars_total": 42677.14,
+    "false_alarms_per_10k": 22.264117066163926
+  },
+  "by_pattern": {
+    "testing": {
+      "total": 102,
+      "caught": 98
+    },
+    "takeover": {
+      "total": 27,
+      "caught": 18
+    },
+    "skimmed": {
+      "total": 36,
+      "caught": 36
+    },
+    "quiet": {
+      "total": 11,
+      "caught": 2
+    }
+  },
+  "decisions": {
+    "approve": {
+      "count": 55457,
+      "fraud": 23
+    },
+    "review": {
+      "count": 81,
+      "fraud": 17
+    },
+    "decline": {
+      "count": 157,
+      "fraud": 136
+    }
+  },
+  "weights": {
+    "log_amount": 0.536,
+    "amount_vs_usual": 0.15,
+    "txns_last_10m": 0.015,
+    "txns_last_1h": 0.38,
+    "spend_last_1h": 0.228,
+    "tiny_txns_last_10m": 0.972,
+    "new_merchant": 0.736,
+    "new_device": 0.535,
+    "travel_speed": 0.017,
+    "distance_from_home": 0.274,
+    "night": 0.344,
+    "card_not_present": 0.131,
+    "digital_goods": 0.65,
+    "gift_card": -0.114,
+    "electronics": -0.135,
+    "history_length": 0.51,
+    "hours_since_last": -0.096
+  }
+}
