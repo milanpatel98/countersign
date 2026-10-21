@@ -55,59 +55,51 @@ export default function App() {
       .catch(() => setError("The demo data is missing. Run “countersign train && countersign export” and reload."));
   }, []);
 
+  const stats = [
+    [data?.report ? pct(data.report.model.recall) : "–", "of fraud caught, reviewing 0.5% of payments"],
+    [data?.real ? pct(data.real.model.recall) : "–", "on real payments, public dataset"],
+    [data?.bench ? `${Math.round(data.bench.p50_us)} µs` : "–", "to score one payment"],
+  ];
   return (
-    <>
-      <header className="hero">
-        <div className="hero-grid-lines" aria-hidden="true" />
-        <div className="wrap bar">
-          <span>Countersign – 03</span>
-          <a href={REPO_URL}>Source</a>
-        </div>
-        <div className="wrap hero-body">
-          <h1 className="word">Countersign</h1>
-          <p className="lede">Real-time card fraud scoring. Every payment checked in microseconds, every decline explained.</p>
-        </div>
-        <div className="wrap hero-foot">
-          <span className="numeral">{data?.report ? pct(data.report.model.recall) : "–"}</span>
-          <p className="hero-caption">
-            of fraud caught while reviewing one payment in two hundred, on days the model never saw.
-          </p>
-        </div>
-      </header>
-
-      <section className="wrap live" aria-labelledby="live-title">
-        <div className="live-text">
-          <h2 id="live-title">Live</h2>
-          <p>
-            The model running in your browser on a stream of invented payments. Reviews and declines show their reasons.
-          </p>
-          <dl className="stats">
-            <div>
-              <dd>{data?.real ? pct(data.real.model.recall) : "–"}</dd>
-              <dt>of fraud caught on real payments from a public dataset</dt>
+    <div className="layout">
+      <aside className="side">
+        <a href="#top" className="brand">
+          Countersign
+        </a>
+        <p className="statement">Every card payment, checked in microseconds. Every decline, explained.</p>
+        <nav className="side-nav" aria-label="Sections">
+          <a href="#live">Live</a>
+          <a href="#results">Results</a>
+          <a href="#real">Real data</a>
+          <a href="#how">How it works</a>
+        </nav>
+        <dl className="side-stats">
+          {stats.map(([v, l]) => (
+            <div key={l}>
+              <dd>{v}</dd>
+              <dt>{l}</dt>
             </div>
-            <div>
-              <dd>{data?.bench ? `${Math.round(data.bench.p50_us)} µs` : "–"}</dd>
-              <dt>to score one payment on one CPU core</dt>
-            </div>
-          </dl>
+          ))}
+        </dl>
+        <div className="side-foot">
+          <a href={REPO_URL}>Source on GitHub</a>
+          <span>© 2026 Milan Patel · <a href={`${REPO_URL}/blob/main/LICENSE`}>MIT</a></span>
         </div>
-        {error ? <p className="notice">{error}</p> : <Feed data={data} />}
-      </section>
+      </aside>
 
-      <main>
+      <main className="content" id="top">
+        <section id="live" className="block">
+          <div className="block-head">
+            <h2>Live</h2>
+            <p>The model running in your browser on a stream of invented payments. Reviews and declines show their reasons.</p>
+          </div>
+          {error ? <p className="notice">{error}</p> : <Feed data={data} />}
+        </section>
         {data?.report && <Results report={data.report} />}
         {data?.real && <Real real={data.real} />}
         {data?.report && <How report={data.report} bench={data.bench} browserMs={data.browserMs} count={data.stream.length} />}
       </main>
-
-      <footer className="wrap foot">
-        <p>© 2026 Milan Patel</p>
-        <p>
-          <a href={`${REPO_URL}/blob/main/LICENSE`}>MIT License</a>
-        </p>
-      </footer>
-    </>
+    </div>
   );
 }
 
@@ -202,8 +194,8 @@ function Results({ report }) {
   const m = report.model;
   const r = report.rules;
   return (
-    <section id="results" className="wrap section">
-      <div className="section-head">
+    <section id="results" className="block">
+      <div className="block-head">
         <h2>Results</h2>
         <p>
           {int(report.transactions)} synthetic payments over 30 days. Trained on days 1 to 20, tested on days 25 to 30, which the model never saw.
@@ -247,8 +239,8 @@ function Real({ real }) {
   const a = real.largest_amounts;
   const d = real.decisions.decline;
   return (
-    <section id="real" className="wrap section">
-      <div className="section-head">
+    <section id="real" className="block">
+      <div className="block-head">
         <h2>Real data</h2>
         <p>
           Tested on the public <a href={DATASET_URL}>Credit Card Fraud Detection dataset</a> by Worldline and the Machine Learning Group of ULB:{" "}
@@ -270,8 +262,8 @@ function Real({ real }) {
 
 function How({ report, bench, browserMs, count }) {
   return (
-    <section id="how" className="wrap section">
-      <div className="section-head">
+    <section id="how" className="block">
+      <div className="block-head">
         <h2>How it works</h2>
       </div>
       <div className="cols">
