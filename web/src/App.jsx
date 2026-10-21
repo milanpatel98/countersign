@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import Cheque from "./Cheque.jsx";
+import { useEffect, useMemo, useState } from "react";
 import { scoreStream } from "./engine.js";
 
 const LABELS = {
@@ -22,23 +21,23 @@ const LABELS = {
   hours_since_last: "Long gap since last purchase",
 };
 
-const PATTERN_TEXT = {
-  testing: ["Card testing", "Bursts of tiny online charges to see if a stolen number works."],
+const PATTERNS = {
+  testing: ["Card testing", "Bursts of tiny online charges to check a stolen number."],
   skimmed: ["Skimmed card", "The physical card used in another city soon after a real swipe."],
   takeover: ["Account takeover", "A new device buying gift cards and digital goods."],
   quiet: ["Quiet misuse", "One slightly-too-big purchase at an odd hour. Hard on purpose."],
 };
+
+const DATASET_URL = "https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud";
+const REPO_URL = "https://github.com/milanpatel98/countersign";
 
 const money = (n) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: n < 100 ? 2 : 0 });
 const int = (n) => (n ?? 0).toLocaleString("en-US");
 const pct = (x) => `${Math.round(x * 100)}%`;
 
 function clock(t) {
-  const day = Math.floor(t / 86400) + 1;
   const s = t % 86400;
-  const h = String(Math.floor(s / 3600)).padStart(2, "0");
-  const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
-  return { day, time: `${h}:${m}` };
+  return `Day ${Math.floor(t / 86400) + 1}, ${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}`;
 }
 
 export default function App() {
@@ -57,273 +56,180 @@ export default function App() {
   }, []);
 
   return (
-    <div className="shell">
-      <Hero data={data} />
-      {error && <p className="notice">{error}</p>}
-      {data && <Live data={data} />}
-      {data?.report && <Results report={data.report} bench={data.bench} browserMs={data.browserMs} count={data.stream.length} />}
-      {data?.real && <Real real={data.real} />}
-      <footer className="foot">
+    <>
+      <header className="hero">
+        <div className="wrap bar">
+          <span>Countersign – 03</span>
+          <a href={REPO_URL}>Source</a>
+        </div>
+        <div className="wrap">
+          <h1 className="word">Countersign</h1>
+        </div>
+        <div className="wrap hero-grid">
+          <div className="hero-text">
+            <p className="lede">Real-time card fraud scoring. Every payment checked in microseconds, every decline explained.</p>
+            <dl className="stats">
+              <div>
+                <dd>{data?.report ? pct(data.report.model.recall) : "–"}</dd>
+                <dt>of fraud caught, reviewing 0.5% of payments</dt>
+              </div>
+              <div>
+                <dd>{data?.real ? pct(data.real.model.recall) : "–"}</dd>
+                <dt>on real payments from a public dataset</dt>
+              </div>
+              <div>
+                <dd>{data?.bench ? `${Math.round(data.bench.p50_us)} µs` : "–"}</dd>
+                <dt>to score one payment</dt>
+              </div>
+            </dl>
+          </div>
+          {error ? <p className="notice">{error}</p> : <Feed data={data} />}
+        </div>
+      </header>
+
+      <main>
+        {data?.report && <Results report={data.report} />}
+        {data?.real && <Real real={data.real} />}
+        {data?.report && <How report={data.report} bench={data.bench} browserMs={data.browserMs} count={data.stream.length} />}
+      </main>
+
+      <footer className="wrap foot">
         <p>© 2026 Milan Patel</p>
         <p>
-          <a href="https://github.com/milanpatel98/countersign/blob/main/LICENSE">MIT License</a>
+          <a href={`${REPO_URL}/blob/main/LICENSE`}>MIT License</a>
         </p>
       </footer>
-    </div>
+    </>
   );
 }
 
-function Guilloche() {
-  // The interlaced wave pattern printed on cheques to make forgery hard.
-  const lines = [];
-  for (let k = 0; k < 26; k++) {
-    let d = "";
-    for (let x = 0; x <= 1200; x += 12) {
-      const y = 300 + Math.sin(x / 70 + k * 0.42) * (90 + k * 4) + Math.sin(x / 23 + k) * 12 + (k - 13) * 9;
-      d += `${x === 0 ? "M" : "L"}${x} ${y.toFixed(1)}`;
-    }
-    lines.push(<path key={k} d={d} />);
-  }
-  return (
-    <svg className="guilloche" viewBox="0 0 1200 600" preserveAspectRatio="none" aria-hidden="true">
-      {lines}
-    </svg>
-  );
-}
+/* ---- live feed --------------------------------------------------------------- */
 
-function Hero({ data }) {
-  return (
-    <header className="hero">
-      <Guilloche />
-      <div className="bar">
-        <span className="bar-name">Countersign – 03</span>
-        <a href="https://github.com/milanpatel98/countersign">Source</a>
-      </div>
-      <h1 className="sr-only">Countersign: real-time card fraud scoring that explains every decline</h1>
-      <Cheque stream={data?.stream} report={data?.report} bench={data?.bench} />
-    </header>
-  );
-}
-
-const SPEEDS = [
-  { label: "Slow", n: 1 },
-  { label: "Fast", n: 6 },
-  { label: "Faster", n: 30 },
-];
-
-function Live({ data }) {
-  const { stream, model } = data;
-  const start = useMemo(() => Math.max(0, stream.findIndex((e) => e.arrivalTime >= 4 * 86400)), [stream]);
-  const [pos, setPos] = useState(start);
+function Feed({ data }) {
+  const stream = data?.stream;
+  const start = useMemo(() => (stream ? Math.max(0, stream.findIndex((e) => e.arrivalTime >= 4 * 86400)) : 0), [stream]);
+  const [pos, setPos] = useState(0);
   const [playing, setPlaying] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const [speed, setSpeed] = useState(1);
-  const timer = useRef(null);
+
+  useEffect(() => setPos(start), [start]);
 
   useEffect(() => {
-    if (!playing) return undefined;
-    timer.current = setInterval(() => {
-      setPos((p) => (p + SPEEDS[speed].n >= stream.length ? start : p + SPEEDS[speed].n));
-    }, 420);
-    return () => clearInterval(timer.current);
-  }, [playing, speed, stream.length, start]);
+    if (!stream || !playing) return undefined;
+    const t = setInterval(() => setPos((p) => (p + 1 >= stream.length ? start : p + 1)), 900);
+    return () => clearInterval(t);
+  }, [stream, playing, start]);
 
-  const seen = useMemo(() => {
-    const s = { scored: 0, approve: 0, review: 0, decline: 0, dupes: 0, late: 0, stopped: 0, missed: 0, stoppedN: 0, missedN: 0 };
-    for (let i = start; i <= pos && i < stream.length; i++) {
-      const e = stream[i];
-      if (e.duplicate) {
-        s.dupes++;
-        continue;
-      }
-      s.scored++;
-      s[e.action]++;
-      if (e.late) s.late++;
-      if (e.fraud && e.action !== "approve") {
-        s.stopped += e.amount;
-        s.stoppedN++;
-      }
-      if (e.fraud && e.action === "approve") {
-        s.missed += e.amount;
-        s.missedN++;
-      }
-    }
-    return s;
-  }, [stream, start, pos]);
-
-  const tape = useMemo(() => {
+  const rows = useMemo(() => {
+    if (!stream) return [];
     const out = [];
-    for (let i = Math.min(pos, stream.length - 1); i >= start && out.length < 9; i--) if (!stream[i].duplicate) out.push(stream[i]);
+    for (let i = Math.min(pos, stream.length - 1); i >= start && out.length < 5; i--) if (!stream[i].duplicate) out.push(stream[i]);
     return out;
   }, [stream, start, pos]);
 
-  const now = clock(stream[Math.min(pos, stream.length - 1)].arrivalTime);
+  const tally = useMemo(() => {
+    const t = { scored: 0, review: 0, decline: 0 };
+    if (!stream) return t;
+    for (let i = start; i <= pos && i < stream.length; i++) {
+      const e = stream[i];
+      if (e.duplicate) continue;
+      t.scored++;
+      if (e.action !== "approve") t[e.action]++;
+    }
+    return t;
+  }, [stream, start, pos]);
 
   const nextAlert = () => {
     for (let i = pos + 1; i < stream.length; i++) {
-      const e = stream[i];
-      if (!e.duplicate && e.action !== "approve") {
-        setPos(i);
-        return;
-      }
+      if (!stream[i].duplicate && stream[i].action !== "approve") return setPos(i);
     }
-    setPos(start);
+    return setPos(start);
   };
 
   return (
-    <section className="live" aria-labelledby="live-title">
-      <div className="live-head">
-        <div>
-          <h2 id="live-title">Live</h2>
-          <p className="live-sub">
-            The model running in your browser on a synthetic day of payments. Day {now.day}, {now.time}.
-          </p>
-        </div>
-        <div className="controls">
-          <button type="button" className="btn btn-solid" onClick={() => setPlaying((p) => !p)}>
+    <section className="feed" aria-label="Live payments">
+      <div className="feed-head">
+        <span className={`live-dot ${playing ? "on" : ""}`} aria-hidden="true" />
+        <span className="feed-title">Live</span>
+        <span className="feed-clock">{stream ? clock(stream[Math.min(pos, stream.length - 1)].arrivalTime) : "Loading"}</span>
+      </div>
+      <ol className="feed-list">
+        {rows.map((e) => (
+          <li key={e.id} className={`item item-${e.action}`}>
+            <div className="item-main">
+              <span className="item-merchant">{e.merchantName}</span>
+              <span className="item-amount">{money(e.amount)}</span>
+            </div>
+            <div className="item-sub">
+              <span>
+                {e.city || "Online"}
+                {e.late ? " · arrived late" : ""}
+              </span>
+              <span className={`pill pill-${e.action}`}>{e.action === "approve" ? "Approved" : e.action === "review" ? "Review" : "Declined"}</span>
+            </div>
+            {e.reasons.length > 0 && <p className="item-why">{e.reasons.map((r) => r.label).join(" · ")}</p>}
+          </li>
+        ))}
+        {!stream && Array.from({ length: 5 }, (_, i) => <li key={i} className="item item-skeleton" />)}
+      </ol>
+      <div className="feed-foot">
+        <span>
+          {int(tally.scored)} scored · {int(tally.review)} review · {int(tally.decline)} declined
+        </span>
+        <span className="feed-controls">
+          <button type="button" onClick={() => setPlaying((p) => !p)} disabled={!stream}>
             {playing ? "Pause" : "Play"}
           </button>
-          <div className="seg" role="group" aria-label="Speed">
-            {SPEEDS.map((s, i) => (
-              <button key={s.label} type="button" aria-pressed={i === speed} onClick={() => setSpeed(i)}>
-                {s.label}
-              </button>
-            ))}
-          </div>
-          <button type="button" className="btn" onClick={nextAlert}>
+          <button type="button" onClick={nextAlert} disabled={!stream}>
             Next alert
           </button>
-        </div>
+        </span>
       </div>
-
-      <dl className="tally">
-        <div>
-          <dt>Scored</dt>
-          <dd>{int(seen.scored)}</dd>
-        </div>
-        <div>
-          <dt>Approved</dt>
-          <dd>{int(seen.approve)}</dd>
-        </div>
-        <div>
-          <dt>Sent to review</dt>
-          <dd>{int(seen.review)}</dd>
-        </div>
-        <div className="tally-decline">
-          <dt>Declined</dt>
-          <dd>{int(seen.decline)}</dd>
-        </div>
-        <div>
-          <dt>Fraud stopped</dt>
-          <dd>{money(seen.stopped)}</dd>
-        </div>
-        <div>
-          <dt>Fraud missed</dt>
-          <dd>{money(seen.missed)}</dd>
-        </div>
-      </dl>
-
-      <ol className="tape" aria-live="off">
-        {tape.map((e) => (
-          <Row key={e.id} e={e} model={model} />
-        ))}
-      </ol>
-      <p className="tape-note">
-        {int(seen.dupes)} duplicate deliveries dropped and {int(seen.late)} late arrivals scored so far. Everything here is invented: no real people,
-        cards or shops.
-      </p>
     </section>
   );
 }
 
-function Row({ e, model }) {
-  const place = e.city || "Online";
-  const t = clock(e.eventTime);
-  const missed = e.fraud && e.action === "approve";
-  const bar = Math.min(1, e.score / Math.max(model.decline_at, 1e-9));
-  return (
-    <li className={`row row-${e.action}${missed ? " row-missed" : ""}`}>
-      <span className="row-time">{t.time}</span>
-      <span className="row-who">
-        <span className="row-merchant">{e.merchantName}</span>
-        <span className="row-place">
-          {place}
-          {e.late && " · arrived late"}
-        </span>
-      </span>
-      <span className="row-amount">{money(e.amount)}</span>
-      <span className="row-risk" aria-label={`Risk ${Math.round(bar * 100)} of 100`}>
-        <span style={{ width: `${Math.max(3, bar * 100)}%` }} />
-      </span>
-      <span className="row-action">{e.action === "approve" ? "Approved" : e.action === "review" ? "Review" : "Declined"}</span>
-      {(e.reasons.length > 0 || e.fraud) && (
-        <span className="row-why">
-          {e.reasons.map((r) => r.label).join(" · ")}
-          {e.fraud && <span className={`truth ${missed ? "truth-missed" : ""}`}>{missed ? "Fraud, missed" : "Fraud"}</span>}
-        </span>
-      )}
-    </li>
-  );
-}
+/* ---- sections ------------------------------------------------------------------ */
 
-function Results({ report, bench, browserMs, count }) {
+function Results({ report }) {
   const m = report.model;
   const r = report.rules;
-  const s = report.skewed_training;
   return (
-    <section className="results" aria-labelledby="results-title">
-      <h2 id="results-title">How well it works</h2>
-      <p className="results-intro">
-        Trained on days 1 to 20 of {int(report.transactions)} synthetic payments, tuned on days 21 to 24, and tested on days 25 to 30, which it never saw.
-        Analysts can review 0.5% of traffic, so the question is how much fraud lands inside that budget.
-      </p>
-
+    <section id="results" className="wrap section">
+      <div className="section-head">
+        <h2>Results</h2>
+        <p>
+          {int(report.transactions)} synthetic payments over 30 days. Trained on days 1 to 20, tested on days 25 to 30, which the model never saw.
+          Analysts can review 0.5% of payments.
+        </p>
+      </div>
       <div className="compare">
-        <Bar label="Countersign" value={m.recall} detail={`${m.fraud_caught} of ${m.fraud_total} frauds · ${money(m.dollars_caught)} of ${money(m.dollars_total)}`} strong />
-        <Bar label="Hand-written rules" value={r.recall} detail={`${r.fraud_caught} of ${r.fraud_total} frauds · ${money(r.dollars_caught)}`} />
+        <Meter label="Countersign" value={m.recall} note={`${m.fraud_caught} of ${m.fraud_total} frauds · ${money(m.dollars_caught)} of ${money(m.dollars_total)}`} strong />
+        <Meter label="Hand-written rules" value={r.recall} note={`${r.fraud_caught} of ${r.fraud_total} frauds · ${money(r.dollars_caught)}`} />
       </div>
-
-      <div className="grid">
-        <article>
-          <h3>What it catches</h3>
-          <ul className="patterns">
-            {Object.entries(report.by_pattern).map(([k, v]) => (
-              <li key={k}>
-                <span className="pattern-name">{PATTERN_TEXT[k][0]}</span>
-                <span className="pattern-score">
-                  {v.caught}/{v.total}
-                </span>
-                <span className="pattern-note">{PATTERN_TEXT[k][1]}</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article>
-          <h3>Training sees what serving sees</h3>
-          <p>
-            Rebuilding features later from a tidy, time-sorted table changes {int(report.skewed_vectors)} of them, because late payments were not known
-            when the decision was made. Countersign trains on the same arrival-ordered replay it serves, and a test checks the two match bit for bit.
-          </p>
-          <p className="muted">
-            On this data the tidy rebuild happened to score about the same (PR-AUC {s.pr_auc.toFixed(3)} against {m.pr_auc.toFixed(3)}). The guarantee is
-            the point; the gap shows up when late data is less random than it is here.
-          </p>
-        </article>
-
-        <article>
-          <h3>Fast enough for the till</h3>
-          {bench ? (
-            <p>
-              {int(bench.events_per_second)} payments a second on one core. Half finish in {bench.p50_us} µs, 99% in {bench.p99_us} µs, including
-              features, score, decision and reasons.
-            </p>
-          ) : null}
-          <p className="muted">
-            This page scored {int(count)} payments in {Math.round(browserMs)} ms with a JavaScript port of the engine, which agrees with the Python
-            version on every score.
-          </p>
-        </article>
-      </div>
+      <table className="table">
+        <thead>
+          <tr>
+            <th scope="col">Fraud pattern</th>
+            <th scope="col" className="num">
+              Caught
+            </th>
+            <th scope="col" className="hide-sm">
+              What it looks like
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(report.by_pattern).map(([k, v]) => (
+            <tr key={k}>
+              <td>{PATTERNS[k][0]}</td>
+              <td className="num">
+                {v.caught} / {v.total}
+              </td>
+              <td className="hide-sm muted">{PATTERNS[k][1]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 }
@@ -333,36 +239,71 @@ function Real({ real }) {
   const a = real.largest_amounts;
   const d = real.decisions.decline;
   return (
-    <section className="results real" aria-labelledby="real-title">
-      <h2 id="real-title">Checked on real payments</h2>
-      <p className="results-intro">
-        The public Credit Card Fraud Detection dataset from Worldline and the Université Libre de Bruxelles: {int(real.transactions)} card payments
-        from two days in September 2013, {real.fraud} of them fraud. Its columns are anonymised, so there are no cards or shops to build behaviour from;
-        this tests the model, the time split and the alert budget on real traffic. Trained on the first 60% by time, tested on the last{" "}
-        {int(real.split.test)} payments.
-      </p>
-      <div className="compare">
-        <Bar label="Countersign" value={m.recall} detail={`${m.fraud_caught} of ${m.fraud_total} frauds caught reviewing ${m.reviewed} payments · PR-AUC ${m.pr_auc.toFixed(3)}`} strong />
-        <Bar label="Flag the largest payments" value={a.recall} detail={`${a.fraud_caught} of ${a.fraud_total} frauds`} />
+    <section id="real" className="wrap section">
+      <div className="section-head">
+        <h2>Real data</h2>
+        <p>
+          Tested on the public <a href={DATASET_URL}>Credit Card Fraud Detection dataset</a> by Worldline and the Machine Learning Group of ULB:{" "}
+          {int(real.transactions)} card payments from September 2013, {real.fraud} of them fraud. Its columns are anonymised, so this checks the model
+          and evaluation rather than the per-card features. Trained on the first 60% by time, tested on the last {int(real.split.test)}.
+        </p>
       </div>
-      <p className="real-note">
-        Of the {d.count} payments it would decline outright, {d.fraud} were fraud. Scoring takes {real.score_us_per_payment} µs a payment.
+      <div className="compare">
+        <Meter label="Countersign" value={m.recall} note={`${m.fraud_caught} of ${m.fraud_total} frauds · reviewing ${m.reviewed} payments`} strong />
+        <Meter label="Flag the largest payments" value={a.recall} note={`${a.fraud_caught} of ${a.fraud_total} frauds`} />
+      </div>
+      <p className="footnote">
+        {d.fraud} of the {d.count} payments it would decline were fraud. Dataset: <a href={DATASET_URL}>kaggle.com/datasets/mlg-ulb/creditcardfraud</a>,
+        Database Contents License (DbCL) v1.0.
       </p>
     </section>
   );
 }
 
-function Bar({ label, value, detail, strong }) {
+function How({ report, bench, browserMs, count }) {
   return (
-    <div className={`bar-row ${strong ? "bar-strong" : ""}`}>
-      <div className="bar-label">
+    <section id="how" className="wrap section">
+      <div className="section-head">
+        <h2>How it works</h2>
+      </div>
+      <div className="cols">
+        <article>
+          <h3>Same features in training and live</h3>
+          <p>
+            One feature engine sees payments in the order they arrive, for training and for scoring. A tidy rebuild would have changed{" "}
+            {int(report.skewed_vectors)} feature vectors; a test checks Countersign's match bit for bit.
+          </p>
+        </article>
+        <article>
+          <h3>Built for messy streams</h3>
+          <p>
+            {int(report.late_events)} payments arrived late and {int(report.duplicates)} were delivered twice. Late ones are still scored straight away;
+            duplicates are dropped.
+          </p>
+        </article>
+        <article>
+          <h3>Fast and explainable</h3>
+          <p>
+            {bench ? `${int(bench.events_per_second)} payments a second on one core, p99 ${bench.p99_us} µs. ` : ""}A linear model gives exact reasons for
+            every decline. This page scored {int(count)} payments in {Math.round(browserMs)} ms.
+          </p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function Meter({ label, value, note, strong }) {
+  return (
+    <div className={`meter ${strong ? "meter-strong" : ""}`}>
+      <div className="meter-top">
         <span>{label}</span>
-        <span className="bar-value">{pct(value)}</span>
+        <span className="meter-value">{pct(value)}</span>
       </div>
-      <div className="bar-track">
-        <span style={{ width: `${value * 100}%` }} />
+      <div className="meter-track">
+        <span style={{ width: `${Math.max(1, value * 100)}%` }} />
       </div>
-      <p className="bar-detail">{detail}</p>
+      <p className="meter-note">{note}</p>
     </div>
   );
 }
