@@ -182,7 +182,7 @@ button {
 }
 
 .cheque-bank {
-  margin-right: auto;
+  margin-right: 8px;
   font-size: clamp(20px, 2.4vw, 26px);
   font-weight: 800;
   letter-spacing: -0.03em;
@@ -342,8 +342,8 @@ button {
 
 .notes {
   position: absolute;
-  top: clamp(64px, 9vw, 92px);
-  right: clamp(-12px, -1vw, 0px);
+  top: -16px;
+  right: clamp(16px, 3vw, 32px);
   margin: 0;
   padding: 10px 14px;
   list-style: none;

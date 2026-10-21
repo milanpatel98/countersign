@@ -152,7 +152,8 @@ function Paper({ e }) {
         <div className="memo">
           <span className="cheque-label">Memo</span>
           <span>
-            {CATEGORY[e.category] || e.category} · {place}
+            {CATEGORY[e.category] || e.category}
+            {e.category === "online" ? "" : ` · ${place}`}
             {e.late ? " · arrived late" : ""}
           </span>
         </div>
