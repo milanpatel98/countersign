@@ -111,7 +111,7 @@ function Feed({ data }) {
   const [pos, setPos] = useState(0);
   const [playing, setPlaying] = useState(() => !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
-  useEffect(() => setPos(start), [start]);
+  useEffect(() => setPos(start + 8), [start]);
 
   useEffect(() => {
     if (!stream || !playing) return undefined;
