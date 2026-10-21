@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import Cheque from "./Cheque.jsx";
 import { scoreStream } from "./engine.js";
 
 const LABELS = {
@@ -57,7 +58,7 @@ export default function App() {
 
   return (
     <div className="shell">
-      <Hero report={data?.report} />
+      <Hero data={data} />
       {error && <p className="notice">{error}</p>}
       {data && <Live data={data} />}
       {data?.report && <Results report={data.report} bench={data.bench} browserMs={data.browserMs} count={data.stream.length} />}
@@ -90,23 +91,16 @@ function Guilloche() {
   );
 }
 
-function Hero({ report }) {
-  const m = report?.model;
+function Hero({ data }) {
   return (
     <header className="hero">
       <Guilloche />
       <div className="bar">
-        <span>Countersign – 03</span>
+        <span className="bar-name">Countersign – 03</span>
         <a href="https://github.com/milanpatel98/countersign">Source</a>
       </div>
-      <h1 className="word">Countersign</h1>
-      <p className="hero-line">Scores every card payment in microseconds, and says why it said no.</p>
-      <div className="hero-foot">
-        <span className="numeral">{m ? pct(m.recall) : "–"}</span>
-        <p className="hero-caption">
-          of fraud caught while reviewing one payment in two hundred, on days the model never saw.
-        </p>
-      </div>
+      <h1 className="sr-only">Countersign: real-time card fraud scoring that explains every decline</h1>
+      <Cheque stream={data?.stream} report={data?.report} bench={data?.bench} />
     </header>
   );
 }
