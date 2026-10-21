@@ -404,6 +404,10 @@ button {
   line-height: 20px;
 }
 
+.truth:first-child {
+  margin-left: 0;
+}
+
 .truth-missed {
   background: var(--decline);
 }

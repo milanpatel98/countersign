@@ -166,7 +166,7 @@ function Live({ data }) {
   const nextAlert = () => {
     for (let i = pos + 1; i < stream.length; i++) {
       const e = stream[i];
-      if (!e.duplicate && (e.action !== "approve" || e.fraud)) {
+      if (!e.duplicate && e.action !== "approve") {
         setPos(i);
         return;
       }
