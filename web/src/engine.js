@@ -157,7 +157,7 @@ export function hydrate(world) {
       arrivalTime,
       amount,
       merchant,
-      merchantName: name,
+      merchantName: name.replace(" .", "."),
       category,
       city,
       lat,
