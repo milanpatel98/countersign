@@ -34,6 +34,27 @@ Decisions on the test days: 157 declined (136 fraud, 87% precision), 81 sent to 
 
 **Skew, measured honestly.** Rebuilding features in event-time order changes 4,401 of 276,650 vectors. On this data, a model trained on those tidy features scored about the same (PR-AUC 0.879 against 0.878), because late arrivals here are random rather than tied to fraud. The guarantee still matters: in production, late data is rarely random.
 
+## Checked on real payments
+
+The public [Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) dataset (Worldline and the Machine Learning Group of ULB): 284,807 card payments from European cardholders over two days in September 2013, 492 of them fraud. Its columns are anonymised with PCA (V1 to V28, plus time and amount), so there are no card ids or merchants and the per-card feature engine cannot run. What it does test is the rest: the numpy model, the time-ordered split, threshold selection and the alert-budget evaluation, on real traffic.
+
+Trained on the first 60% by time, thresholds tuned on the next 15%, tested on the last 71,202 payments (94 fraud):
+
+| Reviewing 0.5% of payments | Fraud caught | PR-AUC |
+| --- | --- | --- |
+| **Countersign model** | **81 of 94 (86%)** | **0.765** |
+| Flag the largest payments | 1 of 94 (1%) | 0.002 |
+
+Declines: 52 payments, 50 of them fraud (96%). Scoring: about 8 µs a payment.
+
+```bash
+# download creditcard.csv from Kaggle (free account), then:
+countersign realdata path/to/creditcard.csv
+CREDITCARD_CSV=path/to/creditcard.csv pytest     # adds the real-data test
+```
+
+The CSV is not in this repository: it is 150 MB and its licence asks users to obtain it from the source.
+
 ## How it works
 
 ```

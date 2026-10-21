@@ -92,11 +92,28 @@ def cmd_export(args) -> None:
     )
     (out / "model.json").write_text(model.to_json())
     (out / "report.json").write_text((ART / "report.json").read_text())
-    if (ART / "bench.json").exists():
-        (out / "bench.json").write_text((ART / "bench.json").read_text())
+    for extra in ("bench.json", "real.json"):
+        if (ART / extra).exists():
+            (out / extra).write_text((ART / extra).read_text())
     Path(args.expected).parent.mkdir(parents=True, exist_ok=True)
     Path(args.expected).write_text(json.dumps(expected, separators=(",", ":")))
     print(f"exported {len(rows):,} events for {args.cards} cards to {out}")
+
+
+def cmd_realdata(args) -> None:
+    from .realdata import run as run_real
+
+    r = run_real(args.path)
+    ART.mkdir(exist_ok=True)
+    (ART / "real.json").write_text(json.dumps(r, indent=2))
+    m, a = r["model"], r["largest_amounts"]
+    print(f"{r['transactions']:,} real payments, {r['fraud']} fraud; tested on the last {r['split']['test']:,} ({r['split']['test_fraud']} fraud)")
+    print(f"reviewing {m['reviewed']} payments (0.5%):")
+    print(f"  model             catches {m['fraud_caught']}/{m['fraud_total']} ({m['recall']:.0%}), PR-AUC {m['pr_auc']:.3f}")
+    print(f"  largest amounts   catches {a['fraud_caught']}/{a['fraud_total']} ({a['recall']:.0%})")
+    d = r["decisions"]["decline"]
+    print(f"declined {d['count']}, of which {d['fraud']} fraud · {r['score_us_per_payment']} µs per payment")
+    print(f"wrote {ART / 'real.json'}")
 
 
 def main(argv=None) -> None:
@@ -119,6 +136,10 @@ def main(argv=None) -> None:
     s.add_argument("--from-day", type=int, default=24)
     s.add_argument("--limit", type=int, default=20000)
     s.set_defaults(func=cmd_stream)
+
+    rd = sub.add_parser("realdata", help="test the model on the public creditcard.csv dataset")
+    rd.add_argument("path", help="path to creditcard.csv")
+    rd.set_defaults(func=cmd_realdata)
 
     x = sub.add_parser("export", help="write the browser demo's data")
     x.add_argument("--seed", type=int, default=11)

@@ -532,6 +532,11 @@ button {
   color: var(--muted);
 }
 
+.real-note {
+  margin-top: 18px;
+  font-size: 17px;
+}
+
 /* ---- misc -------------------------------------------------------------------- */
 
 .notice {

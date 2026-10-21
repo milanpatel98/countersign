@@ -172,3 +172,21 @@ def test_stream_scores_every_transaction_once(small, trained):
     assert stats.duplicates == len(events) - unique
     assert stats.max_queue <= 64
     assert sum(stats.actions.values()) == unique
+
+
+# ---- real data (runs only when the public dataset is present) ---------------------
+
+import os
+
+REAL = os.environ.get("CREDITCARD_CSV", "data/creditcard.csv")
+
+
+@pytest.mark.skipif(not os.path.exists(REAL), reason="creditcard.csv not present; see README")
+def test_real_dataset_holds_up():
+    from countersign.realdata import run as run_real
+
+    r = run_real(REAL)
+    assert r["transactions"] == 284807 and r["fraud"] == 492
+    assert r["model"]["recall"] > 0.75
+    d = r["decisions"]["decline"]
+    assert d["fraud"] / max(1, d["count"]) > 0.8

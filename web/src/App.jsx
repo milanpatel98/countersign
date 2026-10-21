@@ -45,12 +45,12 @@ export default function App() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all(["world", "model", "report", "bench"].map((f) => fetch(`data/${f}.json`).then((r) => (r.ok ? r.json() : null))))
-      .then(([world, model, report, bench]) => {
+    Promise.all(["world", "model", "report", "bench", "real"].map((f) => fetch(`data/${f}.json`).then((r) => (r.ok ? r.json() : null))))
+      .then(([world, model, report, bench, real]) => {
         if (!world || !model) throw new Error("missing");
         const t0 = performance.now();
         const stream = scoreStream(world, model, LABELS);
-        setData({ stream, model, report, bench, browserMs: performance.now() - t0 });
+        setData({ stream, model, report, bench, real, browserMs: performance.now() - t0 });
       })
       .catch(() => setError("The demo data is missing. Run “countersign train && countersign export” and reload."));
   }, []);
@@ -61,6 +61,7 @@ export default function App() {
       {error && <p className="notice">{error}</p>}
       {data && <Live data={data} />}
       {data?.report && <Results report={data.report} bench={data.bench} browserMs={data.browserMs} count={data.stream.length} />}
+      {data?.real && <Real real={data.real} />}
       <footer className="foot">
         <p>© 2026 Milan Patel</p>
         <p>
@@ -329,6 +330,30 @@ function Results({ report, bench, browserMs, count }) {
           </p>
         </article>
       </div>
+    </section>
+  );
+}
+
+function Real({ real }) {
+  const m = real.model;
+  const a = real.largest_amounts;
+  const d = real.decisions.decline;
+  return (
+    <section className="results real" aria-labelledby="real-title">
+      <h2 id="real-title">Checked on real payments</h2>
+      <p className="results-intro">
+        The public Credit Card Fraud Detection dataset from Worldline and the Université Libre de Bruxelles: {int(real.transactions)} card payments
+        from two days in September 2013, {real.fraud} of them fraud. Its columns are anonymised, so there are no cards or shops to build behaviour from;
+        this tests the model, the time split and the alert budget on real traffic. Trained on the first 60% by time, tested on the last{" "}
+        {int(real.split.test)} payments.
+      </p>
+      <div className="compare">
+        <Bar label="Countersign" value={m.recall} detail={`${m.fraud_caught} of ${m.fraud_total} frauds caught reviewing ${m.reviewed} payments · PR-AUC ${m.pr_auc.toFixed(3)}`} strong />
+        <Bar label="Flag the largest payments" value={a.recall} detail={`${a.fraud_caught} of ${a.fraud_total} frauds`} />
+      </div>
+      <p className="real-note">
+        Of the {d.count} payments it would decline outright, {d.fraud} were fraud. Scoring takes {real.score_us_per_payment} µs a payment.
+      </p>
     </section>
   );
 }

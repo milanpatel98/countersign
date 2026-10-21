@@ -1,0 +1,83 @@
+{
+  "dataset": "Credit Card Fraud Detection (Worldline and ULB), 2 days of European card payments, September 2013",
+  "transactions": 284807,
+  "fraud": 492,
+  "split": {
+    "train": 170884,
+    "validate": 42721,
+    "test": 71202,
+    "test_fraud": 94,
+    "test_hours": [
+      38.7,
+      48.0
+    ]
+  },
+  "model": {
+    "pr_auc": 0.7645746924194622,
+    "reviewed": 356,
+    "fraud_caught": 81,
+    "fraud_total": 94,
+    "recall": 0.8617021276595744,
+    "precision": 0.22752808988764045,
+    "dollars_caught": 8484.06,
+    "dollars_total": 10839.130000000001,
+    "false_alarms_per_10k": 38.62251060363473
+  },
+  "largest_amounts": {
+    "pr_auc": 0.0015233936551758362,
+    "reviewed": 356,
+    "fraud_caught": 1,
+    "fraud_total": 94,
+    "recall": 0.010638297872340425,
+    "precision": 0.0028089887640449437,
+    "dollars_caught": 1504.93,
+    "dollars_total": 10839.130000000001,
+    "false_alarms_per_10k": 49.858150051964834
+  },
+  "decisions": {
+    "approve": {
+      "count": 70863,
+      "fraud": 14
+    },
+    "review": {
+      "count": 287,
+      "fraud": 30
+    },
+    "decline": {
+      "count": 52,
+      "fraud": 50
+    }
+  },
+  "score_us_per_payment": 7.52,
+  "weights": {
+    "V1": 0.066,
+    "V2": -0.006,
+    "V3": 0.002,
+    "V4": 0.622,
+    "V5": 0.076,
+    "V6": -0.055,
+    "V7": -0.019,
+    "V8": -0.255,
+    "V9": -0.161,
+    "V10": -0.367,
+    "V11": 0.179,
+    "V12": -0.504,
+    "V13": -0.244,
+    "V14": -0.611,
+    "V15": -0.042,
+    "V16": -0.143,
+    "V17": -0.054,
+    "V18": 0.018,
+    "V19": -0.074,
+    "V20": -0.074,
+    "V21": 0.088,
+    "V22": 0.076,
+    "V23": -0.079,
+    "V24": -0.046,
+    "V25": 0.01,
+    "V26": -0.039,
+    "V27": -0.008,
+    "V28": -0.005,
+    "log_amount": 0.066
+  }
+}
