@@ -58,34 +58,42 @@ export default function App() {
   return (
     <>
       <header className="hero">
+        <div className="hero-grid-lines" aria-hidden="true" />
         <div className="wrap bar">
           <span>Countersign – 03</span>
           <a href={REPO_URL}>Source</a>
         </div>
-        <div className="wrap">
+        <div className="wrap hero-body">
           <h1 className="word">Countersign</h1>
+          <p className="lede">Real-time card fraud scoring. Every payment checked in microseconds, every decline explained.</p>
         </div>
-        <div className="wrap hero-grid">
-          <div className="hero-text">
-            <p className="lede">Real-time card fraud scoring. Every payment checked in microseconds, every decline explained.</p>
-            <dl className="stats">
-              <div>
-                <dd>{data?.report ? pct(data.report.model.recall) : "–"}</dd>
-                <dt>of fraud caught, reviewing 0.5% of payments</dt>
-              </div>
-              <div>
-                <dd>{data?.real ? pct(data.real.model.recall) : "–"}</dd>
-                <dt>on real payments from a public dataset</dt>
-              </div>
-              <div>
-                <dd>{data?.bench ? `${Math.round(data.bench.p50_us)} µs` : "–"}</dd>
-                <dt>to score one payment</dt>
-              </div>
-            </dl>
-          </div>
-          {error ? <p className="notice">{error}</p> : <Feed data={data} />}
+        <div className="wrap hero-foot">
+          <span className="numeral">{data?.report ? pct(data.report.model.recall) : "–"}</span>
+          <p className="hero-caption">
+            of fraud caught while reviewing one payment in two hundred, on days the model never saw.
+          </p>
         </div>
       </header>
+
+      <section className="wrap live" aria-labelledby="live-title">
+        <div className="live-text">
+          <h2 id="live-title">Live</h2>
+          <p>
+            The model running in your browser on a stream of invented payments. Reviews and declines show their reasons.
+          </p>
+          <dl className="stats">
+            <div>
+              <dd>{data?.real ? pct(data.real.model.recall) : "–"}</dd>
+              <dt>of fraud caught on real payments from a public dataset</dt>
+            </div>
+            <div>
+              <dd>{data?.bench ? `${Math.round(data.bench.p50_us)} µs` : "–"}</dd>
+              <dt>to score one payment on one CPU core</dt>
+            </div>
+          </dl>
+        </div>
+        {error ? <p className="notice">{error}</p> : <Feed data={data} />}
+      </section>
 
       <main>
         {data?.report && <Results report={data.report} />}
