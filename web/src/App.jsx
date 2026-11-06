@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { scoreStream } from "./engine.js";
+import NeuralHorn from "./NeuralHorn.jsx";
 
 const LABELS = {
   log_amount: "Large amount",
@@ -83,7 +84,9 @@ export default function App() {
         </dl>
         <div className="side-foot">
           <a href={REPO_URL}>Source on GitHub</a>
-          <span>© 2026 Milan Patel · <a href={`${REPO_URL}/blob/main/LICENSE`}>MIT</a></span>
+          <span>
+            <NeuralHorn className="side-nh" /> · <a href={`${REPO_URL}/blob/main/LICENSE`}>MIT</a>
+          </span>
         </div>
       </aside>
 

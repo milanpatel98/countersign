@@ -159,6 +159,19 @@ button {
   color: var(--ink);
 }
 
+.side-nh {
+  vertical-align: bottom;
+  transition: color 120ms;
+}
+.side-nh .nh-mark {
+  height: 12px;
+  color: var(--ink);
+}
+.side-nh:hover,
+.side-nh:focus-visible {
+  color: var(--ink);
+}
+
 /* ---- content -------------------------------------------------------------------- */
 
 .content {

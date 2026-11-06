@@ -116,3 +116,16 @@ web/src/engine.js   JavaScript port; web/test/parity.mjs checks it against Pytho
 ## License
 
 MIT
+
+---
+
+<p align="center">
+  <a href="https://www.theneuralhorn.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/brand/neural-horn-white.svg">
+      <img src="docs/brand/neural-horn-black.svg" alt="The Neural Horn" height="22">
+    </picture>
+  </a>
+  <br>
+  <sub>© 2026 The Neural Horn</sub>
+</p>
